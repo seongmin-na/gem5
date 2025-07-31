@@ -93,9 +93,9 @@ Ramulator2::sendResponse()
     bool success = port.sendTimingResp(responseQueue.front());
     if (success) {
         responseQueue.pop_front();
-        DPRINTF(Ramulator2, "Have %d read, %d write,
+        DPRINTF(Ramulator2, "Have %d read, %d write, \\
                                 % d responses outstanding\n ",
-                                nbrOutstandingReads,
+                nbrOutstandingReads,
                 nbrOutstandingWrites,
                 responseQueue.size());
 

@@ -34,6 +34,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include "cpu/testers/traffic_gen/base.hh"
 
 #include <sstream>
@@ -62,6 +63,8 @@
 
 #if HAVE_PROTOBUF
 #include "cpu/testers/traffic_gen/trace_gen.hh"
+#include "cpu/testers/traffic_gen/trace_pim_gen.hh"
+
 #endif
 
 namespace gem5
@@ -202,6 +205,7 @@ BaseTrafficGen::update()
             if (blockedWaitingResp || !port.sendTimingReq(pkt)) {
                 retryPkt = pkt;
                 retryPktTick = curTick();
+                DPRINTF(TrafficGen, "pkt Blocked waiting for response\n");
             }
         } else if (pkt) {
             DPRINTF(TrafficGen, "Suppressed packet %s 0x%x\n",
@@ -552,6 +556,20 @@ BaseTrafficGen::createTrace(Tick duration,
         new TraceGen(*this, requestorId, duration, trace_file, addr_offset));
 #else
     panic("Can't instantiate trace generation without Protobuf support!\n");
+#endif
+}
+
+std::shared_ptr<BaseGen>
+BaseTrafficGen::createPIMTrace(Tick duration,
+                               const std::string &trace_file, Addr addr_offset)
+{
+#if HAVE_PROTOBUF
+    return std::shared_ptr<BaseGen>(
+        new TracePIMGen(*this, requestorId,
+                        duration, trace_file, addr_offset));
+#else
+    panic("Can't instantiate trace pim generation
+        without Protobuf support!\n");
 #endif
 }
 

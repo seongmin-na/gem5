@@ -75,3 +75,15 @@ class PyTrafficGen(BaseTrafficGen):
                 "Trace playback requires that gem5 "
                 "was built with protobuf support."
             )
+
+    @cxxMethod(override=True)
+    def createPIMTrace(self, duration, trace_file, addr_offset=0):
+        if buildEnv["HAVE_PROTOBUF"]:
+            return self.getCCObject().createPIMTrace(
+                duration, trace_file, addr_offset=addr_offset
+            )
+        else:
+            raise NotImplementedError(
+                "Trace playback requires that gem5 "
+                "was built with protobuf support."
+            )

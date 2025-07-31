@@ -171,7 +171,18 @@ TrafficGen::parseConfig()
 
                     states[id] = createTrace(duration, traceFile, addrOffset);
                     DPRINTF(TrafficGen, "State: %d TraceGen\n", id);
-                } else if (mode == "IDLE") {
+                } else if (mode == "TRACEPIM"){
+                    std::string traceFile;
+                    Addr addrOffset;
+
+                    is >> traceFile >> addrOffset;
+                    traceFile = resolveFile(traceFile);
+
+                    states[id] = createPIMTrace(duration,
+                                                traceFile, addrOffset);
+                    DPRINTF(TrafficGen, "State: %d TracePIMGen\n", id);
+                }
+                else if (mode == "IDLE") {
                     states[id] = createIdle(duration);
                     DPRINTF(TrafficGen, "State: %d IdleGen\n", id);
                 } else if (mode == "EXIT") {

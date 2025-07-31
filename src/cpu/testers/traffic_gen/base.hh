@@ -125,7 +125,6 @@ class BaseTrafficGen : public ClockedObject
 
     const int maxOutstandingReqs;
 
-
     /** Request port specialisation for the traffic generator */
     class TrafficGenPort : public RequestPort
     {
@@ -328,6 +327,10 @@ class BaseTrafficGen : public ClockedObject
     std::shared_ptr<BaseGen> createTrace(
         Tick duration,
         const std::string& trace_file, Addr addr_offset);
+
+    std::shared_ptr<BaseGen> createPIMTrace(
+        Tick duration,
+        const std::string &trace_file, Addr addr_offset);
 
   protected:
     void start();

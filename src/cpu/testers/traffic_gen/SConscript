@@ -72,4 +72,5 @@ if env['CONF']['HAVE_PROTOBUF']:
         tags=['protobuf']
     )
     Source('trace_gen.cc', tags=['protobuf'])
+    Source('trace_pim_gen.cc', tags=['protobuf'])
     Source('traffic_gen.cc', tags=['protobuf'])
