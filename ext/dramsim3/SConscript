@@ -41,7 +41,6 @@ import os
 Import('env')
 
 thermal = False
-
 # See if we got a cloned DRAMSim3 repo as a subdirectory and set the
 # HAVE_DRAMSIM flag accordingly
 if not os.path.exists(Dir('.').srcnode().abspath + '/DRAMsim3'):

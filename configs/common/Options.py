@@ -898,3 +898,9 @@ def addFSOptions(parser):
         action="store_true",
         help="Wait for remote GDB to connect.",
     )
+    parser.add_argument(
+        "--ramulator-config",
+        type=str,
+        dest="ramulator_config",
+        help="inputs ramulator configuration file",
+    )

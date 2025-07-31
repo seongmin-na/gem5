@@ -66,6 +66,15 @@ def create_mem_intf(intf, r, i, intlv_bits, intlv_size, xor_low_bit):
     # mapping and row-buffer size
     interface = intf()
 
+    if issubclass(intf, m5.objects.Ramulator2):
+        if not options.ramulator_config:
+            print("--mem-type=Ramulator2 requires --ramulator-config option")
+            exit(1)
+        interface.config_path = options.ramulator_config
+        interface.output_dir = options.output_dir
+        print(
+            "Ramulator2 system configuration file =", options.ramulator_config
+        )
     # Only do this for DRAMs
     if issubclass(intf, m5.objects.DRAMInterface):
         # If the channel bits are appearing after the column
@@ -151,6 +160,8 @@ def config_mem(options, system):
         subsystem = system.hmc_dev
         xbar = system.hmc_dev.xbar
     else:
+        if opt_mem_type == "Ramulator2":
+            print("Memory TYPE:: ", opt_mem_type)
         subsystem = system
         xbar = system.membus
 
@@ -238,9 +249,12 @@ def config_mem(options, system):
                         "For elastic trace, over-riding Simple Memory "
                         "latency to 1ns."
                     )
-
                 # Create the controller that will drive the interface
-                mem_ctrl = dram_intf.controller()
+                if issubclass(intf, m5.objects.Ramulator2):
+                    print("Ramulator2 mem_ctrl is connected \n")
+                    mem_ctrl = dram_intf
+                else:
+                    mem_ctrl = dram_intf.controller()
 
                 mem_ctrls.append(mem_ctrl)
 

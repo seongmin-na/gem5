@@ -1,0 +1,6 @@
+Import("*")
+print(env['HAVE_DRAMSIM'])
+if env['HAVE_RAMULATOR2']:
+    SimObject("Ramulator2.py", sim_objects=['Ramulator2'])
+    Source("ramulator2.cc")
+    DebugFlag("Ramulator2")
