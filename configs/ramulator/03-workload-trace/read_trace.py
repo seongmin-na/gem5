@@ -31,7 +31,7 @@ This is a completed renscript file.
 
 This is a simple script to run the a binary program using the SimpleBoard.
 We will use x86 ISA for this example. This script is partly taken from
-configs/example/gem5_library/arm-hello.py
+configs/example/app/_library/arm-hello.py
 
 * Limitations *
 ---------------
@@ -42,8 +42,8 @@ Usage:
 ------
 
 ```
-scons build/X86/gem5.opt -j<num_proc>
-./build/X86/gem5.opt base-system.py --binary <path/to/binary>
+scons build/X86/app/.opt -j<num_proc>
+./build/X86/app/.opt base-system.py --binary <path/to/binary>
 ```
 """
 
@@ -101,7 +101,7 @@ from gem5.utils.requires import requires
 # memory = Ramulator2System("../example/DDR4.yaml", "ramulator_out", "2GB")
 # memory = SingleChannelDDR4_2400()
 memory = Ramulator2System(
-    "/home/nasm716/attacc_2_duplex/ramulator2/GEM5_LPDDR6.yaml",
+    "/app/ramulator2/GEM5_LPDDR6.yaml",
     "ramulator_out",
     "16GB",
 )
@@ -128,7 +128,7 @@ t_generator = TraceGenerator(
     duration="0.01ms",
     block_size=32,
     addr_offset=0,
-    trace_file="/home/nasm716/gem5_top/gem5/configs/ramulator/trace/trace.bin",
+    trace_file="/app/gem5/configs/ramulator/trace/trace.bin",
     max_outstanding_reqs=64,
 )
 

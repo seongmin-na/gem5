@@ -106,9 +106,7 @@ def main():
 if __name__ == "__main__":
     main()
 
-    """
-    for convinience, here is the enum definition for commands
-    enum Command
+    """enum Command
     {
         InvalidCmd,
         ReadReq,
