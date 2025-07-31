@@ -46,6 +46,7 @@ RUN apt -y update && apt -y upgrade && apt -y install \
     python3-pydot \
     python3-venv \
     python3-tk \
+    python3-pip \
     mypy \
     m4 \
     libcapstone-dev \
@@ -69,3 +70,10 @@ RUN apt -y update && apt -y upgrade && apt -y install \
 # as it's a directory any user can access and write to. Given this only stores
 # caching information, the "/tmp" directory being wiped is not a concern.
 ENV XDG_CACHE_HOME=/tmp/
+# 필요한 Python 패키지 설치 (예: google 패키지)
+RUN pip install google	--break-system-packages
+RUN pip install google-api-python-client --break-system-packages
+
+WORKDIR /app
+COPY app/ramulator2 /app/ramulator2
+COPY app/gem5 /app/gem5
