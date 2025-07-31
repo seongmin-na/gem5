@@ -42,6 +42,7 @@ class TraceGenerator(AbstractGenerator):
         block_size: int = 64,
         addr_offset: int = 0,
         trace_file: str = "",
+        max_outstanding_reqs: int = 64,
     ) -> None:
         if num_cores > 1:
             raise ValueError("Current trace generator only support 1 core")
@@ -52,6 +53,7 @@ class TraceGenerator(AbstractGenerator):
                 block_size=block_size,
                 addr_offset=addr_offset,
                 trace_file=trace_file,
+                max_outstanding_reqs=max_outstanding_reqs,
             )
         )
         """The Trace generator
@@ -74,6 +76,7 @@ class TraceGenerator(AbstractGenerator):
         block_size: int,
         addr_offset: int,
         trace_file: str = "",
+        max_outstanding_reqs: int = 64,
     ) -> List[TraceGeneratorCore]:
         return [
             TraceGeneratorCore(
@@ -81,6 +84,7 @@ class TraceGenerator(AbstractGenerator):
                 block_size=block_size,
                 addr_offset=addr_offset,
                 trace_file=trace_file,
+                max_outstanding_reqs=max_outstanding_reqs,
             )
             for i in range(num_cores)
         ]

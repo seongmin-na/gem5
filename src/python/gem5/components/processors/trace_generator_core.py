@@ -49,6 +49,7 @@ class TraceGeneratorCore(AbstractGeneratorCore):
         block_size: int,
         addr_offset: int,
         trace_file: str,
+        max_outstanding_reqs: int,
     ) -> None:
         super().__init__()
         """ The trace generator core interface.
@@ -69,6 +70,7 @@ class TraceGeneratorCore(AbstractGeneratorCore):
         self._trace_file = trace_file
         self._block_size = block_size
         self._addr_offset = addr_offset
+        self._max_outstanding_reqs = max_outstanding_reqs
 
     @overrides(AbstractCore)
     def connect_dcache(self, port: Port) -> None:
@@ -93,6 +95,7 @@ class TraceGeneratorCore(AbstractGeneratorCore):
             duration,
             self._trace_file,
             self._addr_offset,
+            self._max_outstanding_reqs,
         )
         yield self.generator.createExit(0)
 

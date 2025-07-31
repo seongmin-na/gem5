@@ -159,6 +159,7 @@ TrafficGen::parseConfig()
                 uint32_t id;
                 Tick duration;
                 std::string mode;
+                int max_outstanding_reqs = 0;
 
                 is >> id >> duration >> mode;
 
@@ -178,8 +179,9 @@ TrafficGen::parseConfig()
                     is >> traceFile >> addrOffset;
                     traceFile = resolveFile(traceFile);
 
-                    states[id] = createPIMTrace(duration,
-                                                traceFile, addrOffset);
+                    states[id] = createPIMTrace(duration, traceFile,
+                                                addrOffset,
+                                                max_outstanding_reqs);
                     DPRINTF(TrafficGen, "State: %d TracePIMGen\n", id);
                 }
                 else if (mode == "IDLE") {

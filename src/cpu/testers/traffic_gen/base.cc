@@ -561,9 +561,11 @@ BaseTrafficGen::createTrace(Tick duration,
 
 std::shared_ptr<BaseGen>
 BaseTrafficGen::createPIMTrace(Tick duration,
-                               const std::string &trace_file, Addr addr_offset)
+                               const std::string &trace_file, Addr addr_offset,
+                               int max_outstanding_reqs)
 {
 #if HAVE_PROTOBUF
+    this->maxOutstandingReqs = max_outstanding_reqs;
     return std::shared_ptr<BaseGen>(
         new TracePIMGen(*this, requestorId,
                         duration, trace_file, addr_offset));

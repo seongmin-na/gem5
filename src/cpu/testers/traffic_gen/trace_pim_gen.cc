@@ -170,8 +170,8 @@ TracePIMGen::exit()
     // then we want to generate a warning stating that not the entire
     // trace was played.
     if (!traceComplete) {
-        panic("Trace player %s was unable to replay the entire trace!\n",
-              name());
+        warn("Trace player %s was unable to replay the entire trace!\n",
+             name());
     }
 
     // Clear any flags and start over again from the beginning of the

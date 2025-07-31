@@ -77,10 +77,15 @@ class PyTrafficGen(BaseTrafficGen):
             )
 
     @cxxMethod(override=True)
-    def createPIMTrace(self, duration, trace_file, addr_offset=0):
+    def createPIMTrace(
+        self, duration, trace_file, addr_offset=0, max_outstanding_reqs=64
+    ):
         if buildEnv["HAVE_PROTOBUF"]:
             return self.getCCObject().createPIMTrace(
-                duration, trace_file, addr_offset=addr_offset
+                duration,
+                trace_file,
+                addr_offset=addr_offset,
+                max_outstanding_reqs=max_outstanding_reqs,
             )
         else:
             raise NotImplementedError(
