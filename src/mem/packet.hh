@@ -149,6 +149,17 @@ class MemCmd
         HTMAbort,
         // Tlb shootdown
         TlbiExtSync,
+        // PIM Op
+        PimReadReq,
+        PimReadReqAP,
+        PimWriteReq,
+        PimWriteReqAP,
+        PimIvReadReqAP,
+        PimOvReadReqAP,
+        PimOvWriteReqAP,
+        PimMacPb8,
+        PimDoneResp,
+
         NUM_MEM_CMDS
     };
 
@@ -177,6 +188,8 @@ class MemCmd
         IsPrint,        //!< Print state matching address (for debugging)
         IsFlush,        //!< Flush the address from caches
         FromCache,      //!< Request originated from a caching agent
+        IsPIM, //!< PIM related code
+        IsPIMCtrl, //!< PIM Ctrl code for GEMV
         NUM_COMMAND_ATTRIBUTES
     };
 
@@ -257,6 +270,8 @@ class MemCmd
     bool isError() const        { return testCmdAttrib(IsError); }
     bool isPrint() const        { return testCmdAttrib(IsPrint); }
     bool isFlush() const        { return testCmdAttrib(IsFlush); }
+    bool isPIM() const        { return testCmdAttrib(IsPIM); }
+    bool isPIMCtrl() const        { return testCmdAttrib(IsPIMCtrl); }
 
     bool
     isDemand() const
@@ -629,6 +644,9 @@ class Packet : public Printable, public Extensible<Packet>
             getOffset(blk_size) == 0 && getSize() == blk_size &&
             !isMaskedWrite();
     }
+
+    bool isPIM() const             { return cmd.isPIM(); }
+    bool isPIMCtrl() const             { return cmd.isPIMCtrl(); }
 
     //@{
     /// Snoop flags

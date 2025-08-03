@@ -190,6 +190,7 @@ struct StringWrap
  *
  * \def DDUMP(x, data, count)
  * \def DPRINTF(x, ...)
+ * \def DPRINTF_F(x, ...)
  * \def DPRINTFS(x, s, ...)
  * \def DPRINTFR(x, ...)
  * \def DPRINTFV(x, ...)
@@ -212,6 +213,9 @@ struct StringWrap
             ::gem5::curTick(), name(), #x, __VA_ARGS__); \
     }                                            \
 } while (0)
+
+#define DPRINTF_F(x, fmt, ...) \
+    DPRINTF(x, "[%s] " fmt, __func__, ##__VA_ARGS__)
 
 #define DPRINTFS(x, s, ...) do {                        \
     if (GEM5_UNLIKELY(TRACING_ON && ::gem5::debug::x)) {          \

@@ -101,7 +101,7 @@ from gem5.utils.requires import requires
 # memory = Ramulator2System("../example/DDR4.yaml", "ramulator_out", "2GB")
 # memory = SingleChannelDDR4_2400()
 memory = Ramulator2System(
-    "/app/ramulator2/GEM5_LPDDR6.yaml",
+    "/workspace/cent/ramulator2/GEM5_LPDDR6_PIM.yaml",
     "ramulator_out",
     "16GB",
 )
@@ -125,10 +125,11 @@ l_generator = LinearGenerator(
 
 t_generator = TraceGenerator(
     num_cores=1,
-    duration="0.01ms",
+    duration="1ms",
     block_size=32,
     addr_offset=0,
-    trace_file="/app/gem5/configs/ramulator/trace/trace.bin",
+    trace_file="/workspace/gem5/configs/ramulator/trace/trace_pim.bin",
+    # trace_file="/workspace/gem5/configs/ramulator/trace/trace_type.bin",
     max_outstanding_reqs=64,
 )
 

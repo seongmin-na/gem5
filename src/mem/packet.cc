@@ -237,6 +237,28 @@ MemCmd::commandInfo[] =
     { {IsRead, IsResponse}, InvalidCmd, "HTMReqResp" },
     { {IsRead, IsRequest}, InvalidCmd, "HTMAbort" },
     { {IsRequest}, InvalidCmd, "TlbiExtSync" },
+     // PIM memoty command
+    /* PIM Read from external agent (CPU) */
+    { {IsRead, IsRequest, IsPIM,NeedsResponse}, ReadResp, "PimReadReq" },
+    /* PIM Read with auto-precharge */
+    { {IsRead, IsRequest,IsPIM, NeedsResponse}, ReadResp, "PimReadReqAP" },
+    /* PIM Write from external agent (CPU) */
+    { {IsWrite, IsRequest, IsPIM,NeedsResponse, HasData}, WriteResp, "PimWriteReq" },
+    /* PIM Write with auto-precharge */
+    { {IsWrite, IsRequest, IsPIM,NeedsResponse, HasData}, WriteResp, "PimWriteReqAP" },
+    /* attribute IsRead is need for forward to packet to DRAM*/
+
+    /* PIM IV read: internal register read (no response) */
+    { {IsRead, IsRequest, IsPIM, IsPIMCtrl,NeedsResponse}, PimDoneResp, "PimIvReadReqAP" },
+    /* PIM OV read: internal register read (no response) */
+    { {IsRead, IsRequest, IsPIM, IsPIMCtrl,NeedsResponse}, PimDoneResp, "PimOvReadReqAP" },
+    /* PIM OV write: internal register write (no response) */
+    { {IsRead, IsRequest, IsPIM, IsPIMCtrl,NeedsResponse}, PimDoneResp, "PimOvWriteReqAP" },
+    /* PIM MAC execution trigger */
+    { {IsRead, IsRequest,IsPIM, IsPIMCtrl,NeedsResponse}, PimDoneResp, "PimMacPb8" },
+    /* PIM internal request response*/
+    { {IsResponse, IsPIM}, InvalidCmd, "PimDoneResp" }
+
 };
 
 AddrRange

@@ -22,6 +22,22 @@ namespace gem5
 namespace memory
 {
 
+PIMCommandType
+Ramulator2::getPIMCommandType(const PacketPtr pkt)
+  {
+
+      if (pkt->cmd == CmdPimReadReq)      return PIMCommandType::PimRead;
+      if (pkt->cmd == CmdPimReadReqAP)    return PIMCommandType::PimReadAP;
+      if (pkt->cmd == CmdPimWriteReq)     return PIMCommandType::PimWrite;
+      if (pkt->cmd == CmdPimWriteReqAP)   return PIMCommandType::PimWriteAP;
+      if (pkt->cmd == CmdPimIvReadReqAP)  return PIMCommandType::PimIvRead4A;
+      if (pkt->cmd == CmdPimOvReadReqAP)  return PIMCommandType::PimOvRead4A;
+      if (pkt->cmd == CmdPimOvWriteReqAP) return PIMCommandType::PimOvWrite4A;
+      if (pkt->cmd == CmdPimMacPb8)       return PIMCommandType::PimMacPb8;
+
+      return PIMCommandType::Invalid;
+  }
+
 Ramulator2::Ramulator2(const Params &p) :
     AbstractMemory(p),
     port(name() + ".port", *this),
@@ -32,7 +48,7 @@ Ramulator2::Ramulator2(const Params &p) :
     sendResponseEvent([this]{ sendResponse(); }, name()+".sendResponseEvent"),
     tickEvent([this]{ tick(); }, name()+".tickEvent")
 {
-    DPRINTF(Ramulator2, "Instantiated Ramulator2 \n");
+    DPRINTF_F(Ramulator2, "Instantiated Ramulator2 \n");
     printf("[ramulator2.cc] config_path=%s\n",
             config_path.c_str());
 
@@ -70,7 +86,7 @@ void
 Ramulator2::startup()
 {
     startTick = curTick();
-    DPRINTF(Ramulator2, "startup and schedule tickEvent\n");
+    DPRINTF_F(Ramulator2, "startup and schedule tickEvent\n");
     //kick off the clock ticks
     schedule(tickEvent, clockEdge());
     // schedule(tickEvent, 13121004000177);
@@ -85,15 +101,14 @@ Ramulator2::resetStats() {
 void
 Ramulator2::sendResponse()
 {
-    assert(!retryResp);
     assert(!responseQueue.empty());
-
-    DPRINTF(Ramulator2, "Attempting to send response\n");
+    
+    DPRINTF_F(Ramulator2, "Attempting to send response addr=0x%x pkt=%p\n", responseQueue.front()->getAddr(),responseQueue.front());;
 
     bool success = port.sendTimingResp(responseQueue.front());
     if (success) {
         responseQueue.pop_front();
-        DPRINTF(Ramulator2, "Have %d read, %d write, \\
+        DPRINTF_F(Ramulator2, "Have %d read, %d write, \\
                                 % d responses outstanding\n ",
                 nbrOutstandingReads,
                 nbrOutstandingWrites,
@@ -107,7 +122,7 @@ Ramulator2::sendResponse()
     } else {
         retryResp = true;
 
-        DPRINTF(Ramulator2, "Waiting for response retry\n");
+        DPRINTF_F(Ramulator2, "Waiting for response retry\n");
 
         assert(!sendResponseEvent.scheduled());
     }
@@ -116,7 +131,7 @@ Ramulator2::sendResponse()
 unsigned int
 Ramulator2::nbrOutstanding() const
 {
-    return nbrOutstandingReads + nbrOutstandingWrites + responseQueue.size();
+    return nbrOutstandingReads + nbrOutstandingWrites +nbrOutstandingPIMs + responseQueue.size() +responseQueue.size();
 }
 
 void
@@ -164,101 +179,145 @@ Ramulator2::recvFunctional(PacketPtr pkt)
 bool
 Ramulator2::recvTimingReq(PacketPtr pkt)
 {
-    DPRINTF(Ramulator2, "recvTimingReq: request %s addr %#x size %d\n",
-            pkt->cmdString(), pkt->getAddr(), pkt->getSize());
+    DPRINTF_F(Ramulator2, "recvTimingReq: request %s addr %#x size %d, pkt %p\n",
+            pkt->cmdString(), pkt->getAddr(), pkt->getSize(), pkt);
 
-    panic_if(pkt->cacheResponding(), "Should not see packets where cache "
-             "is responding");
+    panic_if(pkt->cacheResponding(), "Should not see packets where cache is responding");
 
-    panic_if(!(pkt->isRead() || pkt->isWrite()),
-             "Should only see read and writes at memory controller, "
-             "saw %s to %#llx\n", pkt->cmdString(), pkt->getAddr());
-
-    // we should not get a new request after committing to retry the
-    // current one, but unfortunately the CPU violates this rule, so
-    // simply ignore it for now
     if (retryReq)
         return false;
 
+    int cmd = static_cast<int>(getPIMCommandType(pkt));
     bool enqueue_success = false;
-    if (pkt->isRead())
-    {
-        // Generate ramulator READ request
-        // and try to send to ramulator's memory system
+
+    // --- 일반 PIM READ ---
+    if (pkt->isPIM() && !pkt->isPIMCtrl() && pkt->isRead()) {
         enqueue_success = ramulator2_frontend->
-            receive_external_requests(0, pkt->getAddr(), 0,
+            receive_external_requests(cmd, pkt->getAddr(), 0,
             [this](Ramulator::Request& req) {
-                DPRINTF(Ramulator2, "Read to %ld completed.\n", req.addr);
                 auto& pkt_q = outstandingReads.find(req.addr)->second;
                 PacketPtr pkt = pkt_q.front();
                 pkt_q.pop_front();
-                if (!pkt_q.size())
+                if (pkt_q.empty())
                     outstandingReads.erase(req.addr);
-
-                // added counter to track requests in flight
                 --nbrOutstandingReads;
-
                 accessAndRespond(pkt);
             });
 
-        if (enqueue_success)
-        {
+        if (enqueue_success) {
             outstandingReads[pkt->getAddr()].push_back(pkt);
-
-            // we count a transaction as outstanding until it has left the
-            // queue in the controller, and the response has been sent
-            // back, note that this will differ for reads and writes
             ++nbrOutstandingReads;
-        }
-        else
-        {
+        } else {
             retryReq = true;
         }
-    } else if (pkt->isWrite()) {
-        // Generate ramulator WRITE request
-        // and try to send to ramulator's memory system
+
+        return enqueue_success;
+    }
+
+    // --- 일반 PIM WRITE ---
+    if (pkt->isPIM() && !pkt->isPIMCtrl() && pkt->isWrite()) {
         enqueue_success = ramulator2_frontend->
-            receive_external_requests(1, pkt->getAddr(), 0,
+            receive_external_requests(cmd, pkt->getAddr(), 0,
             [this](Ramulator::Request& req) {
-                DPRINTF(Ramulator2, "Write to %ld completed.\n", req.addr);
                 auto& pkt_q = outstandingWrites.find(req.addr)->second;
                 PacketPtr pkt = pkt_q.front();
                 pkt_q.pop_front();
-                if (!pkt_q.size())
+                if (pkt_q.empty())
                     outstandingWrites.erase(req.addr);
-
-                // added counter to track requests in flight
                 --nbrOutstandingWrites;
-
                 accessAndRespond(pkt);
             });
 
-        if (enqueue_success)
-        {
+        if (enqueue_success) {
             outstandingWrites[pkt->getAddr()].push_back(pkt);
-
             ++nbrOutstandingWrites;
-
-            // perform the access for writes
-            accessAndRespond(pkt);
-        }
-        else
-        {
+        } else {
             retryReq = true;
         }
-    } else {
-        // keep it simple and just respond if necessary
-        accessAndRespond(pkt);
-        return true;
+
+        return enqueue_success;
     }
 
-    return enqueue_success;
+    // --- 제어성 PIM 명령 ---
+    if (pkt->isPIM() && pkt->isPIMCtrl()) {
+        enqueue_success = ramulator2_frontend->
+            receive_external_requests(cmd, pkt->getAddr(), 0,
+            [this](Ramulator::Request& req) {
+                auto& pkt_q = outstandingPIMs.find(req.addr)->second;
+                PacketPtr pkt = pkt_q.front();
+                pkt_q.pop_front();
+                if (pkt_q.empty())
+                    outstandingPIMs.erase(req.addr);
+                --nbrOutstandingPIMs;
+                accessAndRespond(pkt);
+            });
+
+        if (enqueue_success) {
+            outstandingPIMs[pkt->getAddr()].push_back(pkt);
+            ++nbrOutstandingPIMs;
+        } else {
+            retryReq = true;
+        }
+
+        return enqueue_success;
+    }
+
+    // --- 일반 DRAM Read ---
+    if (pkt->isRead()) {
+        enqueue_success = ramulator2_frontend->
+            receive_external_requests(cmd, pkt->getAddr(), 0,
+            [this](Ramulator::Request& req) {
+                auto& pkt_q = outstandingReads.find(req.addr)->second;
+                PacketPtr pkt = pkt_q.front();
+                pkt_q.pop_front();
+                if (pkt_q.empty())
+                    outstandingReads.erase(req.addr);
+                --nbrOutstandingReads;
+                accessAndRespond(pkt);
+            });
+
+        if (enqueue_success) {
+            outstandingReads[pkt->getAddr()].push_back(pkt);
+            ++nbrOutstandingReads;
+        } else {
+            retryReq = true;
+        }
+
+        return enqueue_success;
+    }
+
+    // --- 일반 DRAM Write ---
+    if (pkt->isWrite()) {
+        enqueue_success = ramulator2_frontend->
+            receive_external_requests(cmd, pkt->getAddr(), 0,
+            [this](Ramulator::Request& req) {
+                auto& pkt_q = outstandingWrites.find(req.addr)->second;
+                PacketPtr pkt = pkt_q.front();
+                pkt_q.pop_front();
+                if (pkt_q.empty())
+                    outstandingWrites.erase(req.addr);
+                --nbrOutstandingWrites;
+                accessAndRespond(pkt);
+            });
+
+        if (enqueue_success) {
+            outstandingWrites[pkt->getAddr()].push_back(pkt);
+            ++nbrOutstandingWrites;
+        } else {
+            retryReq = true;
+        }
+
+        return enqueue_success;
+    }
+
+    // --- 예외: 지원하지 않는 명령 ---
+    panic("Unsupported command: %s at 0x%x\n", pkt->cmdString(), pkt->getAddr());
 }
 
 void
 Ramulator2::recvRespRetry()
 {
-    DPRINTF(Ramulator2, "Retrying\n");
+    DPRINTF_F(Ramulator2, "Retrying\n");
 
     assert(retryResp);
     retryResp = false;
@@ -268,7 +327,7 @@ Ramulator2::recvRespRetry()
 void
 Ramulator2::accessAndRespond(PacketPtr pkt)
 {
-    DPRINTF(Ramulator2, "Access for address %lld\n", pkt->getAddr());
+    DPRINTF_F(Ramulator2, "Access for address 0x%x pkt:%p\n", pkt->getAddr(),pkt);
 
     bool needsResponse = pkt->needsResponse();
 
@@ -284,8 +343,8 @@ Ramulator2::accessAndRespond(PacketPtr pkt)
         // Here we reset the timing of the packet before sending it out.
         pkt->headerDelay = pkt->payloadDelay = 0;
 
-        DPRINTF(Ramulator2, "Queuing response for address %lld\n",
-                pkt->getAddr());
+        DPRINTF_F(Ramulator2, "Queuing response for address 0x%x ptr:%p\n",
+                pkt->getAddr(),pkt);
 
         // queue it to be sent back
         responseQueue.push_back(pkt);

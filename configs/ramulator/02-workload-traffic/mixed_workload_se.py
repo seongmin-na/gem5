@@ -101,15 +101,15 @@ from gem5.utils.requires import requires
 # binary_path_2 = Path("/app/gem5//configs/ramulator/01-simple-mixed-workload/workload/mm_base")
 
 binary_path_1 = Path(
-    "/app/gem5//configs/ramulator/workload/gemm_32_32"
+    "/workspace/gem5/configs/ramulator/workload/gemm_32_32"
 )
 binary_path_2 = Path(
-    "/app/gem5//configs/ramulator/workload/gemm_32_32"
+    "/workspace/gem5/configs/ramulator/workload/gemm_32_32"
 )
 # Use
 # memory = Ramulator2System("../example/DoDR4.yaml", "ramulator_out", "2GB")
 memory = SingleChannelDDR4_2400()
-# memory = Ramulator2System("/app/ramulator2//GEM5_LPDDR6.yaml","ramulator_out","16GB")
+memory = Ramulator2System("/workspace/cent/ramulator2/GEM5_LPDDR6.yaml","ramulator_out","16GB")
 from gem5.components.processors.linear_generator import (
     LinearGenerator,
     LinearGeneratorCore,

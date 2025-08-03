@@ -206,6 +206,7 @@ BaseTrafficGen::update()
                 retryPkt = pkt;
                 retryPktTick = curTick();
                 DPRINTF(TrafficGen, "pkt Blocked waiting for response\n");
+                DPRINTF(TrafficGen, "pkt info: cmd:%s addr:0x%x ptr:%p requester id: %d\n", pkt->cmdString(), pkt->getAddr(), pkt, pkt->req);
             }
         } else if (pkt) {
             DPRINTF(TrafficGen, "Suppressed packet %s 0x%x\n",
@@ -216,6 +217,7 @@ BaseTrafficGen::update()
                 warn("%s suppressed %d packets with non-memory addresses\n",
                      name(), stats.numSuppressed.value());
 
+            DPRINTF(TrafficGen, "try to deltet Pkt set: cmd:%s addr:0x%x ptr:%p, requester id: %d\n", pkt->cmdString(), pkt->getAddr(), pkt,pkt->req);
             delete pkt;
             pkt = nullptr;
         }
@@ -228,6 +230,8 @@ BaseTrafficGen::update()
         nextPacketTick = activeGenerator->nextPacketTick(elasticReq, 0);
         scheduleUpdate();
     }
+    if(retryPkt)
+        DPRINTF(TrafficGen, "[update] retrypkt info: cmd:%s addr:0x%x ptr:%p requester id: %d\n", retryPkt->cmdString(), retryPkt->getAddr(),retryPkt, retryPkt->req);
 }
 
 void
@@ -304,6 +308,7 @@ BaseTrafficGen::retryReq()
     assert(retryPktTick != 0);
     assert(!blockedWaitingResp);
 
+    DPRINTF(TrafficGen, "[retryReq] retrypkt info: cmd:%s addr:0x%x ptr:%p \n", retryPkt->cmdString(), retryPkt->getAddr(),retryPkt);
     // attempt to send the packet, and if we are successful start up
     // the machinery again
     if (port.sendTimingReq(retryPkt)) {
@@ -580,6 +585,11 @@ BaseTrafficGen::recvTimingResp(PacketPtr pkt)
 {
     auto iter = waitingResp.find(pkt->req);
 
+
+    DPRINTF(TrafficGen, "Get reponse pkt\n");
+    DPRINTF(TrafficGen, "response Pkt set: cmd:%s addr:0x%x ptr:%p \n", pkt->cmdString(), pkt->getAddr(), pkt );
+    DPRINTF(TrafficGen, "response reqid %d \n", pkt->req); 
+
     panic_if(iter == waitingResp.end(), "%s: "
             "Received unexpected response [%s reqPtr=%x]\n",
                pkt->print(), pkt->req);
@@ -598,6 +608,7 @@ BaseTrafficGen::recvTimingResp(PacketPtr pkt)
 
     waitingResp.erase(iter);
 
+    DPRINTF(TrafficGen, "try to deltet Pkt set: cmd:%s addr:0x%x ptr:%p, req_id:%d\n", pkt->cmdString(), pkt->getAddr(), pkt, pkt->req);
     delete pkt;
 
     // Sends up the request if we were blocked
