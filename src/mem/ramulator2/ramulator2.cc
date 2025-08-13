@@ -76,6 +76,8 @@ Ramulator2::init()
     ramulator2_frontend->connect_memory_system(ramulator2_memorysystem);
     ramulator2_memorysystem->connect_frontend(ramulator2_frontend);
 
+    PIM_offset = 0x40000000;
+
     // if (system()->cacheLineSize() != wrapper.burstSize())
     //    fatal("Ramulator2 burst size %d
     //    does not match cache line size %d\n",
@@ -187,7 +189,20 @@ Ramulator2::recvTimingReq(PacketPtr pkt)
     if (retryReq)
         return false;
 
-    int cmd = static_cast<int>(getPIMCommandType(pkt));
+    int cmd =-1;
+    if(pkt->isPIM()){
+        cmd = static_cast<int>(getPIMCommandType(pkt));
+    }
+    else{ // not PIM command 
+        if(pkt->isRead()) cmd =0 ;
+        else if(pkt->isWrite()) cmd =1 ;
+        else{
+            panic("Unsupported command: %s at 0x%x\n", pkt->cmdString(), pkt->getAddr());
+        }
+        if(pkt->getAddr()>= PIM_offset){
+            panic("Normal memory operation accesse %s the PIM memory region at 0x%x\n", pkt->cmdString(), pkt->getAddr());
+        }
+    }
     bool enqueue_success = false;
 
     // --- 일반 PIM READ ---
@@ -310,8 +325,6 @@ Ramulator2::recvTimingReq(PacketPtr pkt)
         return enqueue_success;
     }
 
-    // --- 예외: 지원하지 않는 명령 ---
-    panic("Unsupported command: %s at 0x%x\n", pkt->cmdString(), pkt->getAddr());
 }
 
 void
